@@ -1,0 +1,37 @@
+{
+  "name": "dhcpd-dashboard",
+  "description": "Create an HTTP dashboard for isc-dhcpd",
+  "version": "0.0.0",
+  "author": "Dave Eddy <dave@daveeddy.com> (http://www.daveeddy.com)",
+  "contributors": [],
+  "preferGlobal": true,
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/bahamas10/node-dhcpd-dashboard.git"
+  },
+  "bin": {
+    "dhcpd-dashboard": "./dhcpd-dashboard.js"
+  },
+  "dependencies": {
+    "access-log": "^0.3.9",
+    "dhcpd-leases": "0.0.0",
+    "easyreq": "^0.1.1",
+    "human-time": "0.0.1",
+    "ipsort": "0.0.1",
+    "latest": "^0.2.0",
+    "posix-getopt": "^1.1.0",
+    "static-route": "^0.1.1"
+  },
+  "devDependencies": {},
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  },
+  "engine": "node >= 0.8.0",
+  "keywords": [
+    "http",
+    "dhcpd",
+    "isc-dhcpd",
+    "dhcp"
+  ]
+}
