@@ -83,9 +83,11 @@ function started() {
 
 var leases = {
   updated: new Date().toString(),
-  leases: formatleases(fs.readFileSync(file, 'utf8')),
+  raw: fs.readFileSync(file, 'utf8'),
   error: null,
 };
+leases.leases = formatleases(leases.raw);
+
 function onrequest(req, res) {
   accesslog(req, res);
   easyreq(req, res);
@@ -97,6 +99,9 @@ function onrequest(req, res) {
     case '/dhcpd.json':
       // this is cached as to not be DDoS point
       res.json(leases);
+      break;
+    case '/dhcpd.txt':
+      res.end(leases.raw);
       break;
     default:
       staticroute(req, res);
@@ -114,6 +119,7 @@ function readleases() {
       leases.error = err.message;
     } else {
       leases.error = null;
+      leases.raw = data;
       leases.leases = formatleases(data);
     }
   });
