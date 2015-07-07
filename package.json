@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "access-log": "^0.3.9",
-    "dhcpd-leases": "0.0.0",
+    "dhcpd-leases": "^0.0.1",
     "easyreq": "^0.1.1",
     "human-time": "0.0.1",
     "ipsort": "0.0.1",

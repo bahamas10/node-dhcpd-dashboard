@@ -120,7 +120,11 @@ function readleases() {
     } else {
       leases.error = null;
       leases.raw = data;
-      leases.leases = formatleases(data);
+      try {
+        leases.leases = formatleases(data);
+      } catch(e) {
+        leases.error = e.message;
+      }
     }
   });
 }
