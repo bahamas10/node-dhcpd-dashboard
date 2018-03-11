@@ -133,6 +133,7 @@ function readleases() {
 // javascript object
 function formatleases(s) {
   var o = dhcpdleases(s);
+  var now = new Date();
 
   return ipsort(Object.keys(o)).map(function(ip) {
     Object.keys(o[ip]).forEach(function(key) {
@@ -144,6 +145,7 @@ function formatleases(s) {
         };
     });
     o[ip].ip = ip;
+    o[ip].expired = o[ip].ends.date < now;
     return o[ip];
   });
 }
