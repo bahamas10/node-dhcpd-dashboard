@@ -132,20 +132,52 @@ function readleases() {
 // given a string that is in dhcpd.leases(5) format, return a suitable
 // javascript object
 function formatleases(s) {
-  var o = dhcpdleases(s);
   var now = new Date();
+  var hosts = {};
+  var leases = [];
 
-  return ipsort(Object.keys(o)).map(function(ip) {
-    Object.keys(o[ip]).forEach(function(key) {
-      var val = o[ip][key];
+  // parse data and filter out duplicated leases
+  dhcpdleases(s).forEach(function (lease) {
+    var ip = lease.ip;
+    var mac = lease['hardware ethernet'];
+
+    hosts[ip] = hosts[ip] || {};
+
+    if (!hosts[ip][mac]) {
+      hosts[ip][mac] = lease;
+      return;
+    }
+
+    // lease already found for this ip/mac combo - use latest
+    if (lease.starts > hosts[ip][mac].starts) {
+      hosts[ip][mac] = lease;
+    }
+  });
+
+  // put records into an array
+  Object.keys(hosts).forEach(function (ip) {
+    Object.keys(hosts[ip]).forEach(function (mac) {
+      leases.push(hosts[ip][mac]);
+    });
+  });
+
+  // sort the data
+  leases.sort(function (a, b) {
+    return ipsort.compareFunction(a.ip, b.ip);
+  });
+
+  // format data remaining nicely
+  leases.forEach(function (lease) {
+    Object.keys(lease).forEach(function (key) {
+      var val = lease[key];
+      lease.expired = lease.ends.date < now;
       if (val instanceof Date)
-        o[ip][key] = {
+        lease[key] = {
           date: val,
           human: human(val)
         };
     });
-    o[ip].ip = ip;
-    o[ip].expired = o[ip].ends.date < now;
-    return o[ip];
   });
+
+  return leases;
 }
