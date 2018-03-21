@@ -12,6 +12,7 @@ var http = require('http');
 var path = require('path');
 
 var accesslog = require('access-log');
+var assert = require('assert-plus');
 var dhcpdleases = require('dhcpd-leases');
 var easyreq = require('easyreq');
 var human = require('human-time');
@@ -26,18 +27,20 @@ var staticroute = require('static-route')({
 var package = require('./package.json');
 
 var usage = [
-  'usage: dhcpd-dashboard [-p port] [-H host] [leases file]',
+  'usage: dhcpd-dashboard [-c config] [-p port] [-H host] [leases file]',
   '',
   'options',
   '',
   '  -h, --help               print this message and exit',
   '  -H, --host <host>        [env DHCPD_HTTP_HOST] host on which to listen',
   '  -p, --port <port>        [env DHCPD_HTTP_PORT] port on which to listen',
+  '  -c, --config <config>    [env DHCPD_CONFIG] config file to use',
   '  -u, --updates            check for available updates',
   '  -v, --version            print the version number and exit',
 ].join('\n');
 
 var options = [
+  'c:(config)',
   'h(help)',
   'H:(host)',
   'p:(port)',
@@ -46,17 +49,14 @@ var options = [
 ].join('');
 var parser = new getopt.BasicParser(options, process.argv);
 
-var opts = {
-  host: process.env.DHCPD_HTTP_HOST || '0.0.0.0',
-  port: process.env.DHCPD_HTTP_PORT || 8080,
-};
+var opts = {};
 var option;
 while ((option = parser.getopt())) {
   switch (option.option) {
+    case 'c': opts.configFile = option.optarg; break;
     case 'h': console.log(usage); process.exit(0); break;
     case 'H': opts.host = option.optarg; break;
     case 'p': opts.port = option.optarg; break;
-    case 'r': opts.readonly = true; break;
     case 'u': // check for updates
       require('latest').checkupdate(package, function(ret, msg) {
         console.log(msg);
@@ -68,23 +68,39 @@ while ((option = parser.getopt())) {
   }
 }
 var args = process.argv.slice(parser.optind());
-var file = args[0] || process.env.DHCPD_LEASES_FILE;
 
-if (!file) {
+var config = {};
+if (opts.configFile) {
+  config = JSON.parse(fs.readFileSync(opts.configFile));
+}
+assert.object(config, 'config');
+
+config.host = config.host || opts.host || process.env.DHCPD_HTTP_HOST || '0.0.0.0';
+config.port = parseInt(config.port || opts.port || process.env.DHCPD_HTTP_PORT || 8080, 10);
+config.leases = config.leases || args[0] || process.env.DHCPD_LEASES_FILE;
+
+if (!config.leases) {
   console.error('dhcpd.leases(5) must be specified as the first argument');
   process.exit(1);
 }
 
-http.createServer(onrequest).listen(opts.port, opts.host, started);
+assert.string(config.host, 'config.host');
+assert.number(config.port, 'config.port');
+assert.string(config.leases, 'config.leases');
+assert.optionalObject(config.aliases, 'config.aliases');
+
+http.createServer(onrequest).listen(config.port, config.host, started);
 
 function started() {
-  console.log('listening on http://%s:%d - leases file %s', opts.host, opts.port, file);
+  console.log('listening on http://%s:%d - leases file %s',
+    config.host, config.port, config.leases);
 }
 
 var leases = {
   updated: new Date().toString(),
-  raw: fs.readFileSync(file, 'utf8'),
+  raw: fs.readFileSync(config.leases, 'utf8'),
   error: null,
+  aliasesEnabled: !!config.aliases
 };
 leases.leases = formatleases(leases.raw);
 
@@ -97,7 +113,6 @@ function onrequest(req, res) {
       res.end('pong\n');
       break;
     case '/dhcpd.json':
-      // this is cached as to not be DDoS point
       res.json(leases);
       break;
     case '/dhcpd.txt':
@@ -112,7 +127,7 @@ function onrequest(req, res) {
 // read leases file every 10 seconds
 setInterval(readleases, 10 * 1000);
 function readleases() {
-  fs.readFile(file, 'utf8', function(err, data) {
+  fs.readFile(config.leases, 'utf8', function(err, data) {
     leases.leases = null;
     leases.updated = new Date().toString();
     if (err) {
@@ -168,14 +183,23 @@ function formatleases(s) {
 
   // format data remaining nicely
   leases.forEach(function (lease) {
+    lease.expired = lease.ends < now;
+    var mac = lease['hardware ethernet'];
+
+    if (config.aliases) {
+      lease.alias = config.aliases.hasOwnProperty(mac) ?
+        config.aliases[mac] : '';
+    }
+
     Object.keys(lease).forEach(function (key) {
       var val = lease[key];
-      lease.expired = lease.ends.date < now;
-      if (val instanceof Date)
+
+      if (val instanceof Date) {
         lease[key] = {
           date: val,
           human: human(val)
         };
+      }
     });
   });
 

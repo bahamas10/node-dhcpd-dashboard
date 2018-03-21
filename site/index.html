@@ -88,12 +88,14 @@
 
 		window.addEventListener('load', load);
 		var tbody;
+		var thead;
 		var lastupdated;
 		var errormessage;
 		var showExpired = false;
 		var timeout;
 		function load() {
 			tbody = document.getElementById('table-body');
+			thead = document.getElementById('table-head');
 			lastupdated = document.getElementById('last-updated');
 			errormessage = document.getElementById('error-message');
 			update();
@@ -127,8 +129,27 @@
 				lastupdated.className = 'ok';
 				lastupdated.textContent = data.updated;
 
+				thead.innerHTML = '';
+				var tr = document.createElement('tr');
+
+				[
+					'IP Address',
+					'Hostname',
+					data.aliasesEnabled ? 'Alias' : false,
+					'MAC Address',
+					'Start',
+					'End'
+				].forEach(function (d) {
+					if (d === false)
+						return;
+					var th = document.createElement('th');
+					th.textContent = d;
+					tr.appendChild(th);
+				});
+				thead.appendChild(tr);
+
 				tbody.innerHTML = '';
-				data.leases.forEach(function(lease) {
+				data.leases.forEach(function (lease) {
 					if (lease.expired && !showExpired) {
 						return;
 					}
@@ -138,10 +159,13 @@
 					[
 						lease.ip,
 						lease['client-hostname'],
+						data.aliasesEnabled ? lease.alias : false,
 						lease['hardware ethernet'],
 						lease.starts.human,
 						lease.ends.human
-					].forEach(function(d) {
+					].forEach(function (d) {
+						if (d === false)
+							return;
 						var td = document.createElement('td');
 						td.textContent = d;
 						tr.appendChild(td);
@@ -165,7 +189,7 @@
 			</div>
 			<div class="datagrid">
 				<table>
-					<thead>
+					<thead id="table-head">
 						<tr>
 							<th>IP Address</th>
 							<th>Hostname</th>
