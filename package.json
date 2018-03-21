@@ -1,7 +1,7 @@
 {
   "name": "dhcpd-dashboard",
   "description": "Create an HTTP dashboard for isc-dhcpd",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "author": "Dave Eddy <dave@daveeddy.com> (http://www.daveeddy.com)",
   "contributors": [],
   "preferGlobal": true,
