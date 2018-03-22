@@ -50,7 +50,7 @@ var options = [
 var parser = new getopt.BasicParser(options, process.argv);
 
 var opts = {
-  configFile: process.env.DHCPD_CONFIG;
+  configFile: process.env.DHCPD_CONFIG
 };
 var option;
 while ((option = parser.getopt())) {
