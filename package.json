@@ -15,7 +15,7 @@
   "dependencies": {
     "access-log": "^0.4.1",
     "assert-plus": "^1.0.0",
-    "dhcpd-leases": "^0.1.1",
+    "dhcpd-leases": "^0.1.2",
     "easyreq": "^0.1.3",
     "human-time": "0.0.1",
     "ipsort": "0.0.1",
