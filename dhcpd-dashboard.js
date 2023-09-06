@@ -115,6 +115,7 @@ function onrequest(req, res) {
       res.end('pong\n');
       break;
     case '/dhcpd.json':
+      res.setHeader('Access-Control-Allow-Origin', '*');
       res.json(leases);
       break;
     case '/dhcpd.txt':
